@@ -183,18 +183,16 @@ function ItemDAO(database) {
          *
          */
 
-        var item = this.createDummyItem();
-        var items = [];
-        for (var i=0; i<5; i++) {
-            items.push(item);
-        }
+        var itemsCursor = this.db
+            .collection("item")
+            .find({ $text: { $search: query } })
+            .sort({ _id: 1 })
+            .skip(page * itemsPerPage)
+            .limit(itemsPerPage);
 
-        // TODO-lab2A Replace all code above (in this method).
-
-        // TODO Include the following line in the appropriate
-        // place within your code to pass the items for the selected page
-        // of search results to the callback.
-        callback(items);
+        itemsCursor.toArray(function (err, items) {
+            callback(items);
+        });
     }
 
 
@@ -216,7 +214,11 @@ function ItemDAO(database) {
         * simply do this in the mongo shell.
         */
 
-        callback(numItems);
+        this.db
+            .collection("item")
+            .count({ $text: { $search: query } }, function (err, numItems) {
+                callback(numItems);
+            });
     }
 
 

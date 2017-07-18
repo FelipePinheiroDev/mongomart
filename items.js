@@ -52,20 +52,31 @@ function ItemDAO(database) {
         *
         */
 
-        var categories = [];
-        var category = {
-            _id: "All",
-            num: 9999
-        };
+        this.db
+            .collection("item")
+            .aggregate([
+                {
+                    $group: {
+                        _id: "$category",
+                        num: { $sum: 1 }
+                    }
+                }
+            ], function (err, categories) {
+                var categoryAll = {
+                    _id: "All",
+                    num: categories.reduce(function (qty, category) {
+                        return qty + category.num;
+                    }, 0)
+                };
 
-        categories.push(category)
+                categories.push(categoryAll);
 
-        // TODO-lab1A Replace all code above (in this method).
+                categories.sort(function (a, b) {
+                    return a._id.localeCompare(b._id);
+                });
 
-        // TODO Include the following line in the appropriate
-        // place within your code to pass the categories array to the
-        // callback.
-        callback(categories);
+                callback(categories);
+            });
     }
 
 
@@ -94,18 +105,21 @@ function ItemDAO(database) {
          *
          */
 
-        var pageItem = this.createDummyItem();
-        var pageItems = [];
-        for (var i=0; i<5; i++) {
-            pageItems.push(pageItem);
+        var query = {};
+        if (category !== "All") {
+            query.category = category;
         }
 
-        // TODO-lab1B Replace all code above (in this method).
+        var pageItemsCursor = this.db
+            .collection("item")
+            .find(query)
+            .sort({ _id: 1 })
+            .skip(page * itemsPerPage)
+            .limit(itemsPerPage);
 
-        // TODO Include the following line in the appropriate
-        // place within your code to pass the items for the selected page
-        // to the callback.
-        callback(pageItems);
+        pageItemsCursor.toArray(function (err, pageItems) {
+            callback(pageItems);
+        });
     }
 
 
@@ -129,9 +143,16 @@ function ItemDAO(database) {
          *
          */
 
-         // TODO Include the following line in the appropriate
-         // place within your code to pass the count to the callback.
-        callback(numItems);
+        var query = {};
+        if (category !== "All") {
+            query.category = category;
+        }
+
+        this.db
+            .collection("item")
+            .count(query, function (err, numItems) {
+                callback(numItems);
+            });
     }
 
 

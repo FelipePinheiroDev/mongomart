@@ -74,9 +74,13 @@ function CartDAO(database) {
          *
          */
 
-        callback(null);
-
-        // TODO-lab6 Replace all code above (in this method).
+        var item = this.db
+            .collection("cart")
+            .find({ userId, "items._id": itemId })
+            .project({ _id: 0, "items.$": 1 })
+            .toArray(function (err, docs) {
+                callback(docs.length ? docs[0].items[0] : null);
+            });
     }
 
 

@@ -170,17 +170,23 @@ function CartDAO(database) {
         *
         */
 
-        var userCart = {
-            userId: userId,
-            items: []
+        var query = { userId };
+        var update = {};
+
+        if (quantity === 0) {
+            update = { $pull: { items: { _id: itemId } } };
+        } else {
+            query["items._id"] = itemId;
+            update = { $set: { "items.$.quantity": quantity } };
         }
-        var dummyItem = this.createDummyItem();
-        dummyItem.quantity = quantity;
-        userCart.items.push(dummyItem);
-        callback(userCart);
 
-        // TODO-lab7 Replace all code above (in this method).
-
+        this.db.collection("cart").findOneAndUpdate(
+            query,
+            update,
+            { returnOriginal: false },
+            function (err, result) {
+                callback(result.value);
+            });
     }
 
     this.createDummyItem = function() {
